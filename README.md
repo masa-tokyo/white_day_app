@@ -1,1 +1,0 @@
-# white_day_app
