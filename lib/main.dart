@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:white_day_app/box_state_notifier.dart';
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -16,10 +15,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'White Day App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Happy White Day!'),
+      theme: ThemeData(primarySwatch: Colors.cyan, canvasColor: Colors.white),
+      home: const MyHomePage(title: 'Happy White Day !'),
     );
   }
 }
@@ -30,89 +27,139 @@ class MyHomePage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final boxState = ref.watch<BoxNotifier>(boxProvider.notifier);
-    final notifier = ref.watch<BoxStateNotifier>(boxStateProvider);
     final isTapped = useState<bool>(false);
+    final isOpened = useState<bool>(false);
+    final isMessageShown = useState<bool>(false);
+    final isUndoButtonShown = useState<bool>(false);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
-        backgroundColor: Colors.cyan,
+        title: Text(
+          title,
+          style:
+              const TextStyle(color: Colors.white, fontStyle: FontStyle.italic),
+        ),
       ),
+      floatingActionButton: isUndoButtonShown.value
+          ? _undoButton(
+              context, isTapped, isOpened, isMessageShown, isUndoButtonShown)
+          : const SizedBox.shrink(),
       body: Center(
-        child:
-            // !boxState.isOpened
-            !notifier.isOpened
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      isTapped.value
-                          ? Column(
-                              children: [
-                                ShakenBox(
-                                  child: Image.asset(
-                                    'assets/images/box.png',
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
-                                  ),
-                                  onAnimationFinished: () {
-                                    // boxState.open();
-                                    notifier.open();
-                                  },
-                                ),
-                                const SizedBox(
-                                  height: 24,
-                                ),
-                                Text(
-                                  '',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headline3!
-                                      .copyWith(fontSize: 24),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    isTapped.value = true;
-                                  },
-                                  child: Image.asset(
-                                    'assets/images/box.png',
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.3,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 24,
-                                ),
-                                Text(
-                                  '開けてね',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headline3!
-                                      .copyWith(fontSize: 24),
-                                ),
-                              ],
+        child: !isOpened.value
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  isTapped.value
+                      ? Column(
+                          children: [
+                            ShakenBox(
+                              child: Image.asset(
+                                'assets/images/box.png',
+                                width: MediaQuery.of(context).size.width * 0.3,
+                              ),
+                              onAnimationFinished: () {
+                                isOpened.value = true;
+                                //delay showing message until Image.asset is ready
+                                Future.delayed(const Duration(seconds: 1)).then(
+                                    (value) => isMessageShown.value = true);
+                                Future.delayed(const Duration(seconds: 5)).then(
+                                    (value) => isUndoButtonShown.value = true);
+                              },
                             ),
-                    ],
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Cookies for minnちゃん'),
-                        const SizedBox(
-                          height: 24,
+                            const SizedBox(
+                              height: 24,
+                            ),
+                            Text(
+                              '',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headline3!
+                                  .copyWith(fontSize: 24),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Image.asset(
+                              'assets/images/box.png',
+                              width: MediaQuery.of(context).size.width * 0.3,
+                            ),
+                            const SizedBox(
+                              height: 24,
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                isTapped.value = true;
+                              },
+                              child: const Text(
+                                '開けてね',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
                         ),
-                        Image.asset(
-                          'assets/images/cookies.png',
-                          width: MediaQuery.of(context).size.width * 0.8,
-                        ),
-                      ],
+                ],
+              )
+            : Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      isMessageShown.value ? 'Cookies for minnちゃん' : '',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headline3!
+                          .copyWith(fontSize: 28),
                     ),
-                  ),
+                    Image.asset(
+                      'assets/images/cookies.png',
+                      width: MediaQuery.of(context).size.width * 0.8,
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _undoButton(
+    BuildContext context,
+    ValueNotifier<bool> isTapped,
+    ValueNotifier<bool> isOpened,
+    ValueNotifier<bool> isMessageShown,
+    ValueNotifier<bool> isUndoButtonShown,
+  ) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height,
+      width: MediaQuery.of(context).size.width,
+      child: Column(
+        //locate the button on the bottom end
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('もう一度アニメーションが見たいので'),
+              const Text('開けてないことにする'),
+              const SizedBox(
+                height: 12,
+              ),
+              FloatingActionButton(
+                onPressed: () {
+                  isOpened.value = false;
+                  isMessageShown.value = false;
+                  isUndoButtonShown.value = false;
+                  isTapped.value = false;
+                },
+                child: const Icon(
+                  Icons.refresh_rounded,
+                  color: Colors.white,
+                ),
+              )
+            ],
+          ),
+        ],
       ),
     );
   }
