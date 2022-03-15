@@ -139,9 +139,14 @@ class MyHomePage extends HookConsumerWidget {
         children: [
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text('もう一度アニメーションが見たいので'),
-              const Text('開けてないことにする'),
+              Column(
+                children: const [
+                  Text('もう一度アニメーションが見たいので'),
+                  Text('開けてないことにする'),
+                ],
+              ),
               const SizedBox(
                 height: 12,
               ),
